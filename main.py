@@ -47,8 +47,7 @@ def start_get_novel():
             for down_novel_list in down_list:
                 for down_chapter_list in down_novel_list:
                     if type(down_chapter_list) == nicegui.elements.table.Table:
-                        print(down_chapter_list)
-                        print(type(down_chapter_list))
+                        pass
             ui.button('删除选中项', on_click=lambda: table.remove_rows(*table.selected)).bind_visibility_from(table, 'selected', backward=lambda val: bool(val))
 
 #下载
@@ -94,4 +93,4 @@ with ui.splitter(value=30).classes('w-full h-56') as splitter:
 
 
 
-ui.run(native=True)
+ui.run(native=False)

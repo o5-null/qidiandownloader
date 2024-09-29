@@ -1,6 +1,6 @@
 import re
 
-import cn2an
+import chinese2digits
 import Levenshtein#莱文斯坦距离 检查文本相似度
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
@@ -72,28 +72,39 @@ def clean_goose3(data):
 
 #提取章节数字
 def get_num(title:str):
-    a = re.search('([―－\-─—壹贰叁肆伍陆柒捌玖一二两三四五六七八九十○〇零百千O0-9０-９]{1,12})',title)
-    if title.find('番外'):#不匹配则为NoneType
+    a = re.search('([―－\-─—壹贰叁肆伍陆柒捌玖一二两三四五六七八九十○〇零百千O0-9０-９]{1,12})',title)#不匹配则为NoneType
+    if title.find('番外') != -1 and not a == None :#番外处理
+        a = a.group(1)
+        if not a.isdigit():#非阿拉伯数字
+            a = chinese2digits.chineseToDigits(a)#转化
+            return int(a)+0.1
+        else:
+            return int(a)+0.1
+
+    elif type(a) == 'NoneType':#找不到数字
         return 0
-    a =a.group(1)
-    if not a.isdigit():#非阿拉伯数字
-        a = cn2an.transform(a)#转化
     else:
-        return int(a)
-    return int(a)
+        a = a.group(1)
+        if not a.isdigit():#非阿拉伯数字
+            a = chinese2digits.chineseToDigits(a)#转化
+            return int(a)
+        else:
+            return int(a)
 
 #排除重复章节
-def chaptor_list_claen(list):
+def chaptor_list_clean(list):
     new_list = []#创建临时列表
-    num_list = []
+    url_list = []
     for a in list:
         if a == 'null':
             continue
         #a.append(get_num(a))#添加章节数字索引
-        if not a[-1] in num_list or a[-1] == 0:
-            num_list.append(a[-1])
+        if not a[1] in url_list or a[1] == 0:
+            url_list.append(a[1])
             new_list.append(a)
-    new_list_num = sorted(new_list,key=lambda e:e[-1])
+    #根据章节排序
+    #new_list_num = sorted(new_list,key=lambda e:e[-1])
+    new_list_num = new_list
     return new_list_num
 
 #提取章节超链接
@@ -115,6 +126,6 @@ def get_chaptor_list(data) -> dict:
             if re.match('/',str(tag.get('href'))):#如果链接没有一级域名
                 chaptor_one_url = url.scheme+'://'+url.netloc+str(tag.get('href'))
             chapter_list.append([chaptor_one_url,tag.text,get_num(tag.text)])
-    chapter_list = chaptor_list_claen(chapter_list)#去除重复章节
+    chapter_list = chaptor_list_clean(chapter_list)#去除重复章节
     logger.debug('获取目录 共'+str(len(chapter_list))+'章')
     return {'title':title,'chapter_list':chapter_list}
